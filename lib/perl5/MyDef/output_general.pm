@@ -8,6 +8,7 @@ our $page;
 our %plugin_statement;
 our %plugin_condition;
 
+
 sub get_interface {
     return (\&init_page, \&parsecode, \&set_output, \&modeswitch, \&dumpout);
 }
@@ -31,32 +32,27 @@ sub modeswitch {
 
 sub parsecode {
     my ($l)=@_;
-    if($debug eq "parse"){
+    if ($debug eq "parse") {
         my $yellow="\033[33;1m";
         my $normal="\033[0m";
         print "$yellow parsecode: [$l]$normal\n";
     }
 
-    if($l=~/^\$warn (.*)/){
-        my $curfile=MyDef::compileutil::curfile_curline();
-        print "[$curfile]\x1b[33m $1\n\x1b[0m";
-        return;
-    }
-    elsif($l=~/^DEBUG (\w+)/){
-        if($1 eq "OFF"){
+    if ($l=~/^DEBUG (\w+)/) {
+        if ($1 eq "OFF") {
             $debug=0;
         }
-        else{
+        else {
             $debug=$1;
         }
         return;
     }
-    elsif($l=~/^\$eval\s+(\w+)(.*)/){
+    elsif ($l=~/^\$eval\s+(\w+)(.*)/) {
         my ($codename, $param)=($1, $2);
         $param=~s/^\s*,\s*//;
         my $t=MyDef::compileutil::eval_sub($codename);
         eval $t;
-        if($@ and !$MyDef::compileutil::eval_sub_error{$codename}){
+        if ($@ and !$MyDef::compileutil::eval_sub_error{$codename}) {
             $MyDef::compileutil::eval_sub_error{$codename}=1;
             print "evalsub - $codename\n";
             print "[$t]\n";
@@ -64,58 +60,58 @@ sub parsecode {
         }
         return;
     }
-    if($l=~/^DUMP_STUB\s/){
+    if ($l=~/^DUMP_STUB\s/) {
         push @$out, $l;
     }
-    elsif($l=~/^\s*\$(\w+)\((.*?)\)\s+(.*?)\s*$/){
+    elsif ($l=~/^\s*\$(\w+)\((.*?)\)\s+(.*?)\s*$/) {
         my ($func, $param1, $param2)=($1, $2, $3);
-        if($func eq "plugin"){
-            if($param2=~/_condition$/){
+        if ($func eq "plugin") {
+            if ($param2=~/_condition$/) {
                 $plugin_condition{$param1}=$param2;
             }
-            else{
+            else {
                 $plugin_statement{$param1}=$param2;
             }
             return;
         }
     }
-    elsif($l=~/^\s*\$(\w+)\s*(.*)$/){
-        my ($func, $param)=($1, $2);
-        if($param !~ /^=/){
-            if($func eq "plugin"){
-                foreach my $p (split /,\s*/, $param){
-                    if($p=~/^&(.+)/){
-                        if($p=~/_condition$/){
+    elsif ($l=~/^\s*\$(\w+)\s*(.*)$/) {
+        my ($func, $param) = ($1, $2);
+        if ($param !~ /^=/) {
+            if ($func eq "plugin") {
+                foreach my $p (split /,\s*/, $param) {
+                    if ($p=~/^&(.+)/) {
+                        if ($p=~/_condition$/) {
                             $plugin_condition{$1}=$p;
                         }
-                        else{
+                        else {
                             $plugin_statement{$1}=$p;
                         }
                     }
-                    else{
-                        if($p=~/_condition$/){
+                    else {
+                        if ($p=~/_condition$/) {
                             $plugin_condition{$p}=$p;
                         }
-                        else{
+                        else {
                             $plugin_statement{$p}=$p;
                         }
                     }
                 }
                 return;
             }
-            elsif($plugin_statement{$func}){
+            elsif ($plugin_statement{$func}) {
                 my $c= $plugin_statement{$func};
-                if($c=~/^&(.+)/){
+                if ($c=~/^&(.+)/) {
                     return "PARSE:\&call $1, $param";
                 }
-                else{
+                else {
                     MyDef::compileutil::call_sub("$c, $param");
                 }
                 return;
             }
         }
     }
-    elsif($l=~/^CALLBACK\s+(\w+)\s*(.*)/){
+    elsif ($l=~/^CALLBACK\s+(\w+)\s*(.*)/) {
         my ($func, $param)=($1, $2);
         my $codelist=$MyDef::compileutil::named_blocks{"last_grab"};
         return;
@@ -140,10 +136,10 @@ sub single_block {
     push @src, "DEDENT";
     push @src, "$t2";
     MyDef::compileutil::set_named_block("NEWBLOCK", \@src);
-    if($scope){
+    if ($scope) {
         return "NEWBLOCK-$scope";
     }
-    else{
+    else {
         return "NEWBLOCK";
     }
 }

@@ -8,34 +8,34 @@ sub get_tlist {
     my ($t) = @_;
     my @vlist = split /,\s*/, $t;
     my @tlist;
-    foreach my $v (@vlist){
-        if($v=~/^(\w+)(?:\.\.|-)(.*)$/){
+    foreach my $v (@vlist) {
+        if ($v=~/^(\w+)(?:\.\.|-)(.*)$/) {
             my ($a, $t) = ($1, $2);
-            if(!$t){
+            if ($t eq "") {
                 push @tlist, get_range_n($1, $last_tlist_count);
             }
-            elsif($t=~/^(\w+)$/){
+            elsif ($t=~/^(\w+)$/) {
                 my ($b) = ($1);
                 push @tlist, get_range($a, $b);
             }
-            elsif($t=~/^(\w+)(%.*x)$/){
+            elsif ($t=~/^(\w+)(%.*x)$/) {
                 my ($b, $fmt) = ($1, $2);
                 push @tlist, get_range($a, $b, $fmt);
             }
-            elsif($t=~/^(\w+)\s*\/\s*(.+)$/){
+            elsif ($t=~/^(\w+)\s*\/\s*(.+)$/) {
                 my ($b, $exclude) = ($1, $2);
                 my @temp_list = get_range($a, $b);
-                foreach my $t (@temp_list){
-                    if($t ne $exclude){
+                foreach my $t (@temp_list) {
+                    if ($t ne $exclude) {
                         push @tlist, $t;
                     }
                 }
             }
-            else{
-                warn "get_tlist error: [$t]\n";
+            else {
+                push @tlist, $v;
             }
         }
-        else{
+        else {
             push @tlist, $v;
         }
     }
@@ -47,62 +47,62 @@ sub get_tlist {
 sub get_range {
     my ($a, $b, $fmt) = @_;
     my @tlist;
-    if($fmt=~/^%\d*x$/ and $a=~/^[0-9a-f]+$/ and $b=~/^[0-9a-f]+$/){
+    if ($fmt=~/^%\d*x$/ and $a=~/^[0-9a-f]+$/ and $b=~/^[0-9a-f]+$/) {
         ($a, $b) = (hex($a), hex($b));
-        if($a<=$b){
+        if ($a<=$b) {
             for (my $i=$a;$i<=$b;$i++) {
                 push @tlist, sprintf($fmt, $i);
             }
         }
-        else{
+        else {
             for (my $i=$a;$i>=$b;$i--) {
                 push @tlist, sprintf($fmt, $i);
             }
         }
     }
-    elsif($a=~/^\d+$/ and $b=~/^\d+$/){
-        if($a<=$b){
+    elsif ($a=~/^\d+$/ and $b=~/^\d+$/) {
+        if ($a<=$b) {
             for (my $i=$a;$i<=$b;$i++) {
                 push @tlist, $i;
             }
         }
-        else{
+        else {
             for (my $i=$a;$i>=$b;$i--) {
                 push @tlist, $i;
             }
         }
     }
-    elsif($a=~/^[a-zA-Z]$/ and $b=~/^[a-zA-Z]$/){
+    elsif ($a=~/^[a-zA-Z]$/ and $b=~/^[a-zA-Z]$/) {
         ($a, $b) = (ord($a), ord($b));
-        if($a<=$b){
+        if ($a<=$b) {
             for (my $i=$a;$i<=$b;$i++) {
                 push @tlist, chr($i);
             }
         }
-        else{
+        else {
             for (my $i=$a;$i>=$b;$i--) {
                 push @tlist, chr($i);
             }
         }
     }
-    elsif($a=~/^0x(\d+)$/ and $b=~/^\d+$/){
+    elsif ($a=~/^0x(\d+)$/ and $b=~/^\d+$/) {
         $a = $1;
-        if($a>0){
+        if ($a>0) {
             $a-=1;
             $b-=1;
         }
-        if($a<=$b){
+        if ($a<=$b) {
             for (my $i=$a;$i<=$b;$i++) {
                 push @tlist, sprintf("0x%x", 1<<$i);
             }
         }
-        else{
+        else {
             for (my $i=$a;$i>=$b;$i--) {
                 push @tlist, sprintf("0x%x", 1<<$i);
             }
         }
     }
-    else{
+    else {
         push @tlist, "$a-$b";
     }
 
@@ -111,16 +111,16 @@ sub get_range {
 
 sub get_range_n {
     my ($a, $count) = @_;
-    if($a=~/^\d+$/){
+    if ($a=~/^\d+$/) {
         return get_range($a, $a+$count-1);
     }
-    elsif($a=~/^[a-zA-Z]$/){
+    elsif ($a=~/^[a-zA-Z]$/) {
         return get_range($a, chr(ord($a)+$count-1));
     }
-    elsif($a=~/^0x(\d+)$/){
+    elsif ($a=~/^0x(\d+)$/) {
         return get_range($a, "0x".($1+$count-1));
     }
-    else{
+    else {
         return ["$a-"];
     }
 }
@@ -128,60 +128,60 @@ sub get_range_n {
 sub for_list_expand {
     my ($pat, $list) = @_;
     my ($mult, @vlist);
-    if($list=~/\s+(and)\s+/){
+    if ($list=~/\s+(and)\s+/) {
         $mult = $1;
         @vlist=split /\s+and\s+/, $list;
     }
-    elsif($list=~/\s+(mul)\s+/){
+    elsif ($list=~/\s+(mul)\s+/) {
         $mult = $1;
         @vlist=split /\s+mul\s+/, $list;
     }
-    else{
+    else {
         @vlist = ($list);
     }
 
     my @tlist;
-    foreach my $v (@vlist){
+    foreach my $v (@vlist) {
         my @t = MyDef::utils::get_tlist($v);
         push @tlist, \@t;
     }
 
     my @plist;
-    if(!$mult){
+    if (!$mult) {
         my $replace;
-        if($pat=~/\$1/){
+        if ($pat=~/\$1/) {
             $replace = 1;
         }
-        elsif($pat=~/\*/){
+        elsif ($pat=~/\*/) {
             $replace = 2;
         }
-        else{
+        else {
             die "for_list_expand: pattern invalid\n";
         }
-        foreach my $t (@{$tlist[0]}){
+        foreach my $t (@{$tlist[0]}) {
             my $l = $pat;
-            if($replace==1){
+            if ($replace==1) {
                 $l =~s/\$1/$t/g;
             }
-            else{
+            else {
                 $l =~s/\*/$t/g;
             }
             push @plist, $l;
         }
     }
-    elsif($mult eq "and"){
+    elsif ($mult eq "and") {
         my $n = @{$tlist[0]};
         for (my $i = 0; $i<$n; $i++) {
             my $l = $pat;
             my $j=1;
-            foreach my $tlist (@tlist){
+            foreach my $tlist (@tlist) {
                 $l=~s/\$$j/$tlist->[$i]/g;
                 $j++;
             }
             push @plist, $l;
         }
     }
-    elsif($mult eq "mul"){
+    elsif ($mult eq "mul") {
         my $m = @tlist;
         my @idx;
         for (my $i = 0; $i<$m; $i++) {
@@ -199,10 +199,10 @@ sub for_list_expand {
             my $i=$m-1;
             while($i>=0){
                 $idx[$i]++;
-                if($idx[$i] < @{$tlist[$i]}){
+                if ($idx[$i] < @{$tlist[$i]}) {
                     next iter_mul;
                 }
-                else{
+                else {
                     $idx[$i]=0;
                     $i--;
                 }
@@ -217,10 +217,10 @@ sub for_list_expand {
 sub smart_split {
     my ($param, $n) = @_;
     my @tlist = split /,\s*/, $param;
-    if($n==@tlist){
+    if ($n==@tlist) {
         return @tlist;
     }
-    else{
+    else {
         return proper_split($param);
     }
 }
@@ -228,88 +228,88 @@ sub smart_split {
 sub proper_split {
     my ($param) = @_;
     my @tlist;
-    if($param eq "0"){
+    if ($param eq "0") {
         return (0);
     }
-    elsif(!$param){
+    elsif (!$param) {
         return @tlist;
     }
     my @closure_stack;
     my $t;
     while(1){
-        if($param=~/\G$/sgc){
+        if ($param=~/\G$/sgc) {
             last;
         }
-        elsif($param=~/\G(\s+)/sgc){
-            if($t or @closure_stack){
+        elsif ($param=~/\G(\s+)/sgc) {
+            if ($t or @closure_stack) {
                 $t.=$1;
             }
-            else{
+            else {
             }
         }
-        elsif($param=~/\G(,)/gc){
-            if(@closure_stack){
+        elsif ($param=~/\G(,)/gc) {
+            if (@closure_stack) {
                 $t.=$1;
             }
-            else{
+            else {
                 push @tlist, $t;
                 undef $t;
             }
         }
-        elsif($param=~/\G([^"'\(\[\{\)\]\},]+)/gc){
+        elsif ($param=~/\G([^"'\(\[\{\)\]\},]+)/gc) {
             $t.=$1;
         }
-        elsif($param=~/\G("([^"\\]|\\.)*")/gc){
+        elsif ($param=~/\G("([^"\\]|\\.)*")/gc) {
             $t.=$1;
         }
-        elsif($param=~/\G('([^'\\]|\\.|'')*')/gc){
+        elsif ($param=~/\G('([^'\\]|\\.|'')*')/gc) {
             $t.=$1;
         }
-        elsif($param=~/\G([\(\[\{])/gc){
+        elsif ($param=~/\G([\(\[\{])/gc) {
             $t.=$1;
             push @closure_stack, $1;
         }
-        elsif($param=~/\G([\)\]\}])/gc){
+        elsif ($param=~/\G([\)\]\}])/gc) {
             $t.=$1;
-            if(@closure_stack){
+            if (@closure_stack) {
                 my $match;
-                if($1 eq ')'){
+                if ($1 eq ')') {
                     $match='(';
                 }
-                elsif($1 eq ']'){
+                elsif ($1 eq ']') {
                     $match='[';
                 }
-                elsif($1 eq '}'){
+                elsif ($1 eq '}') {
                     $match='{';
                 }
                 my $pos=-1;
                 for (my $i = 0; $i<@closure_stack; $i++) {
-                    if($match==$closure_stack[$i]){
+                    if ($match==$closure_stack[$i]) {
                         $pos=$i;
                     }
                 }
-                if($pos>=0){
+                if ($pos>=0) {
                     splice(@closure_stack, $pos);
                 }
-                else{
+                else {
                     warn "proper_split: unbalanced [$param]\n";
                 }
             }
         }
-        elsif($param=~/\G(.)/gc){
+        elsif ($param=~/\G(.)/gc) {
             my $curfile=MyDef::compileutil::curfile_curline();
             print "[$curfile]proper_split: unmatched $1 [$param]\n";
             $t.=$1;
         }
-        else{
+        else {
             die "parse_loop: nothing matches! [$param]\n";
         }
     }
 
-    if($t){
+    if ($t) {
         $t=~s/\s+$//;
     }
-    if($t or @tlist){
+    if ($t or @tlist) {
         push @tlist, $t;
     }
     return @tlist;
@@ -320,50 +320,50 @@ sub expand_macro {
     my @paren_stack;
     my $segs=[];
     while(1){
-        if($line=~/\G$/sgc){
+        if ($line=~/\G$/sgc) {
             last;
         }
-        elsif($line=~/\G\$\(/sgc){
+        elsif ($line=~/\G\$\(/sgc) {
             push @paren_stack, $segs;
             $segs=[];
             push @paren_stack, "\$\(";
         }
-        elsif($line=~/\G\$\./sgc){
+        elsif ($line=~/\G\$\./sgc) {
             push @$segs, $sub->("this");
         }
-        elsif($line=~/\G([\x80-\xff]+)/sgc){
+        elsif ($line=~/\G([\x80-\xff]+)/sgc) {
             my $t = MyDef::compileutil::get_macro_word($1, 1);
-            if($t){
+            if ($t) {
                 $MyDef::compileutil::n_get_macro++;
                 push @$segs, $t;
             }
-            else{
+            else {
                 push @$segs, $1;
             }
         }
-        elsif(!@paren_stack){
-            if($line=~/\G([^\$\x80-\xff]|\$(?![\(\.]))+/sgc){
+        elsif (!@paren_stack) {
+            if ($line=~/\G([^\$\x80-\xff]|\$(?![\(\.]))+/sgc) {
                 push @$segs, $&;
             }
         }
-        else{
-            if($line=~/\G\(/sgc){
+        else {
+            if ($line=~/\G\(/sgc) {
                 push @paren_stack, $segs;
                 $segs=[];
                 push @paren_stack, "(";
             }
-            elsif($line=~/\G\)/sgc){
+            elsif ($line=~/\G\)/sgc) {
                 my $t=join('', @$segs);
                 my $open=pop @paren_stack;
                 $segs=pop @paren_stack;
-                if($open eq "(" or $t!~/^\w/){
+                if ($open eq "(" or $t!~/^\w/) {
                     push @$segs, "$open$t)";
                 }
-                else{
+                else {
                     push @$segs, $sub->($t);
                 }
             }
-            elsif($line=~/\G([^\$\x80-\xff()]|\$(?![\(\.]))+/sgc){
+            elsif ($line=~/\G([^\$\x80-\xff()]|\$(?![\(\.]))+/sgc) {
                 push @$segs, $&;
             }
         }
@@ -381,12 +381,12 @@ sub expand_macro {
 
 sub uniq_name {
     my ($name, $hash) = @_;
-    if(!$hash->{$name}){
+    if (!$hash->{$name}) {
         return $name;
     }
-    else{
+    else {
         my $i=2;
-        if($name=~/[0-9_]/){
+        if ($name=~/[0-9_]/) {
             $name.="_";
         }
         while($hash->{"$name$i"}){
@@ -400,7 +400,7 @@ sub longline_split {
     my ($l, $style) = @_;
     my @out;
     my $n = 80;
-    if($l=~/^(\s*)(.+)/){
+    if ($l=~/^(\s*)(.+)/) {
         my ($sp, $t) = ($1, $2);
         $n -= length($sp);
         $l=~s/\s+$//;
@@ -409,16 +409,16 @@ sub longline_split {
             while($j>0 && substr($l, $j, 1) ne ' '){
                 $j--;
             }
-            if($j==0){
+            if ($j==0) {
                 $j = $n;
                 while($j<length($l) && substr($l, $j, 1) ne ' '){
                     $j++;
                 }
-                if($j==length($l)){
+                if ($j==length($l)) {
                     last;
                 }
             }
-            if($j>0){
+            if ($j>0) {
                 push @out, $sp.substr($l, 0, $j);
                 $l = substr($l, $j);
                 $l=~s/^\s+//;
@@ -435,94 +435,94 @@ sub string_symbol_name {
     my $name="";
     for (my $i = 0; $i<$n; $i++) {
         my $c = substr($s, $i, 1);
-        if($c=~/\w/){
+        if ($c=~/\w/) {
             $name.=$c;
         }
-        elsif($c eq "+"){
+        elsif ($c eq "+") {
             $name.="Plus";
         }
-        elsif($c eq "-"){
+        elsif ($c eq "-") {
             $name.="Minus";
         }
-        elsif($c eq "*"){
+        elsif ($c eq "*") {
             $name.="Mult";
         }
-        elsif($c eq "/"){
+        elsif ($c eq "/") {
             $name.="Div";
         }
-        elsif($c eq "="){
+        elsif ($c eq "=") {
             $name.="Eq";
         }
-        elsif($c eq "!"){
+        elsif ($c eq "!") {
             $name.="Emark";
         }
-        elsif($c eq "~"){
+        elsif ($c eq "~") {
             $name.="Tilde";
         }
-        elsif($c eq "^"){
+        elsif ($c eq "^") {
             $name.="Ctrl";
         }
-        elsif($c eq "%"){
+        elsif ($c eq "%") {
             $name.="Mod";
         }
-        elsif($c eq ">"){
+        elsif ($c eq ">") {
             $name.="Gt";
         }
-        elsif($c eq "<"){
+        elsif ($c eq "<") {
             $name.="Lt";
         }
-        elsif($c eq "|"){
+        elsif ($c eq "|") {
             $name.="Or";
         }
-        elsif($c eq "&"){
+        elsif ($c eq "&") {
             $name.="And";
         }
-        elsif($c eq "("){
+        elsif ($c eq "(") {
             $name.="Lp";
         }
-        elsif($c eq ")"){
+        elsif ($c eq ")") {
             $name.="Rp";
         }
-        elsif($c eq "["){
+        elsif ($c eq "[") {
             $name.="Lb";
         }
-        elsif($c eq "]"){
+        elsif ($c eq "]") {
             $name.="Rb";
         }
-        elsif($c eq "{"){
+        elsif ($c eq "{") {
             $name.="Lc";
         }
-        elsif($c eq "}"){
+        elsif ($c eq "}") {
             $name.="Rc";
         }
-        elsif($c eq "\""){
+        elsif ($c eq "\"") {
             $name.="Dq";
         }
-        elsif($c eq "'"){
+        elsif ($c eq "'") {
             $name.="Sq";
         }
-        elsif($c eq "`"){
+        elsif ($c eq "`") {
             $name.="Backtick";
         }
-        elsif($c eq ","){
+        elsif ($c eq ",") {
             $name.="Comma";
         }
-        elsif($c eq "."){
+        elsif ($c eq ".") {
             $name.="Dot";
         }
-        elsif($c eq ":"){
+        elsif ($c eq ":") {
             $name.="Colon";
         }
-        elsif($c eq "?"){
+        elsif ($c eq "?") {
             $name.="Qmark";
         }
-        elsif($c eq ";"){
+        elsif ($c eq ";") {
             $name.="Semi";
         }
-        elsif($c eq "\\"){
+        elsif ($c eq "\\") {
             $name.="Backslash";
         }
-        else{
+        else {
             die "string_symbol_name: [$c] not defined\n";
         }
     }
@@ -542,101 +542,101 @@ sub parse_regex {
     while($i<length($re)){
         my $c=substr($re, $i, 1);
         $i++;
-        if(!$escape && $c eq "\\"){
+        if (!$escape && $c eq "\\") {
             $escape=1;
             next;
         }
-        elsif($escape){
+        elsif ($escape) {
             my $atom;
-            if($c=~/[0aefnrt]/){
-                if($c eq "a"){
+            if ($c=~/[0aefnrt]/) {
+                if ($c eq "a") {
                     $c= "\a";
                 }
-                elsif($c eq "e"){
+                elsif ($c eq "e") {
                     $c= "\e";
                 }
-                elsif($c eq "f"){
+                elsif ($c eq "f") {
                     $c= "\f";
                 }
-                elsif($c eq "n"){
+                elsif ($c eq "n") {
                     $c= "\n";
                 }
-                elsif($c eq "r"){
+                elsif ($c eq "r") {
                     $c= "\r";
                 }
-                elsif($c eq "t"){
+                elsif ($c eq "t") {
                     $c= "\t";
                 }
-                elsif($c eq "0"){
+                elsif ($c eq "0") {
                     $c= "\0";
                 }
                 $atom={type=>"char", char=>$c};
             }
-            elsif($c=~/[sSdDwW]/){
+            elsif ($c=~/[sSdDwW]/) {
                 $atom={type=>"class", char=>$c};
             }
-            else{
+            else {
                 $atom={type=>"char", char=>$c};
             }
             push @$atoms, $atom;
             $escape=0;
         }
-        elsif($c eq '('){
+        elsif ($c eq '(') {
             push @paren_stack, {atoms=>$atoms, alts=>$alts, type=>"group"};
             $atoms=[];
             $alts=[];
-            if(substr($re, $i, 2) eq "?:"){
+            if (substr($re, $i, 2) eq "?:") {
                 $paren_stack[-1]->{type}="seq";
                 $i+=2;
             }
-            elsif(substr($re, $i, 2) eq "?="){
+            elsif (substr($re, $i, 2) eq "?=") {
                 $paren_stack[-1]->{type}="?=";
                 $i+=2;
             }
-            elsif(substr($re, $i, 2) eq "?!"){
+            elsif (substr($re, $i, 2) eq "?!") {
                 $paren_stack[-1]->{type}="?!";
                 $i+=2;
             }
         }
-        elsif($c eq ')'){
+        elsif ($c eq ')') {
             {
                 my $type="seq";
                 $type=$paren_stack[-1]->{type};
                 my $n=@$atoms;
-                if($n==0){
+                if ($n==0) {
                     warn "regex_parse: empty group\n";
                     push @$alts, undef;
                 }
-                else{
-                    if($flag_combine_chars){
+                else {
+                    if ($flag_combine_chars) {
                         my @tlist;
                         my $last;
                         push @$atoms, {type=>"end"};
-                        foreach my $t (@$atoms){
-                            if(!$last){
+                        foreach my $t (@$atoms) {
+                            if (!$last) {
                                 $last=$t;
                             }
-                            elsif($t->{type} ne "char" or $last->{type} ne "char"){
+                            elsif ($t->{type} ne "char" or $last->{type} ne "char") {
                                 push @tlist, $last;
                                 $last=$t;
                             }
-                            else{
+                            else {
                                 $last->{char}.=$t->{char};
                             }
                         }
                         $atoms=\@tlist;
                         $n=@$atoms;
                     }
-                    if($type ne "seq"){
+                    if ($type ne "seq") {
                         push @$alts, {type=>$type, n=>$n, list=>$atoms};
                         $atoms=[];
                     }
-                    else{
+                    else {
                         my $atom;
-                        if($n==1){
+                        if ($n==1) {
                             $atom=pop @$atoms;
                         }
-                        else{
+                        else {
                             $atom={type=>"seq", n=>$n, list=>$atoms};
                             $atoms=[];
                         }
@@ -646,59 +646,59 @@ sub parse_regex {
             }
             my $atom;
             my $n=@$alts;
-            if($n==1){
+            if ($n==1) {
                 $atom=pop @$alts;
             }
-            elsif($n>1){
+            elsif ($n>1) {
                 $atom={type=>"alt", n=>$n, list=>$alts};
                 $alts=[];
             }
             my $p=pop @paren_stack;
-            if(!$p){
+            if (!$p) {
                 die "REGEX $re: Unmatched parenthesis\n";
             }
             $atoms=$p->{atoms};
             $alts=$p->{alts};
             push @$atoms, $atom;
         }
-        elsif($c eq '|'){
+        elsif ($c eq '|') {
             {
                 my $type="seq";
                 my $n=@$atoms;
-                if($n==0){
+                if ($n==0) {
                     warn "regex_parse: empty alt\n";
                     push @$alts, undef;
                 }
-                else{
-                    if($flag_combine_chars){
+                else {
+                    if ($flag_combine_chars) {
                         my @tlist;
                         my $last;
                         push @$atoms, {type=>"end"};
-                        foreach my $t (@$atoms){
-                            if(!$last){
+                        foreach my $t (@$atoms) {
+                            if (!$last) {
                                 $last=$t;
                             }
-                            elsif($t->{type} ne "char" or $last->{type} ne "char"){
+                            elsif ($t->{type} ne "char" or $last->{type} ne "char") {
                                 push @tlist, $last;
                                 $last=$t;
                             }
-                            else{
+                            else {
                                 $last->{char}.=$t->{char};
                             }
                         }
                         $atoms=\@tlist;
                         $n=@$atoms;
                     }
-                    if($type ne "seq"){
+                    if ($type ne "seq") {
                         push @$alts, {type=>$type, n=>$n, list=>$atoms};
                         $atoms=[];
                     }
-                    else{
+                    else {
                         my $atom;
-                        if($n==1){
+                        if ($n==1) {
                             $atom=pop @$atoms;
                         }
-                        else{
+                        else {
                             $atom={type=>"seq", n=>$n, list=>$atoms};
                             $atoms=[];
                         }
@@ -707,11 +707,11 @@ sub parse_regex {
                 }
             }
         }
-        elsif($c eq '*' or $c eq '+' or $c eq '?'){
-            if(!@$atoms){
+        elsif ($c eq '*' or $c eq '+' or $c eq '?') {
+            if (!@$atoms) {
                 die "REGEX $re: Empty '$c'\n";
             }
-            if(substr($re, $i, 1) eq "?"){
+            if (substr($re, $i, 1) eq "?") {
                 print "Non-Greedy quantifier not supported!\n";
                 $c.='?';
                 $i++;
@@ -719,56 +719,56 @@ sub parse_regex {
             my $t=pop @$atoms;
             push @$atoms, {type=>$c, atom=>$t};
         }
-        elsif($c eq '['){
+        elsif ($c eq '[') {
             my @class=();
             my $escape;
             my $_recurse="[2]";
             while($i<length($re)){
                 my $c=substr($re, $i, 1);
                 $i++;
-                if(!$escape && $c eq "\\"){
+                if (!$escape && $c eq "\\") {
                     $escape=1;
                     next;
                 }
-                elsif($escape){
-                    if($c=~/[0aefnrt]/){
-                        if($c eq "a"){
+                elsif ($escape) {
+                    if ($c=~/[0aefnrt]/) {
+                        if ($c eq "a") {
                             $c= "\a";
                         }
-                        elsif($c eq "e"){
+                        elsif ($c eq "e") {
                             $c= "\e";
                         }
-                        elsif($c eq "f"){
+                        elsif ($c eq "f") {
                             $c= "\f";
                         }
-                        elsif($c eq "n"){
+                        elsif ($c eq "n") {
                             $c= "\n";
                         }
-                        elsif($c eq "r"){
+                        elsif ($c eq "r") {
                             $c= "\r";
                         }
-                        elsif($c eq "t"){
+                        elsif ($c eq "t") {
                             $c= "\t";
                         }
-                        elsif($c eq "0"){
+                        elsif ($c eq "0") {
                             $c= "\0";
                         }
                     }
-                    elsif($c=~/[sSdDwW]/){
+                    elsif ($c=~/[sSdDwW]/) {
                         $c = "\\$c";
                     }
                     push @class, $c;
                     $escape=0;
                 }
-                elsif($c eq ']'){
+                elsif ($c eq ']') {
                     last;
                 }
-                else{
-                    if(@class>=2 and $class[-1] eq "-"){
+                else {
+                    if (@class>=2 and $class[-1] eq "-") {
                         pop @class;
                         $class[-1].="-$c";
                     }
-                    else{
+                    else {
                         push @class, $c;
                     }
                 }
@@ -776,60 +776,60 @@ sub parse_regex {
             my $atom={type=>"class", list=>\@class};
             push @$atoms, $atom;
         }
-        elsif($c eq '.'){
+        elsif ($c eq '.') {
             my $atom={type=>"AnyChar"};
-            if(substr($re, $i, 1) eq "*"){
+            if (substr($re, $i, 1) eq "*") {
                 $atom->{type}="Any";
                 $stat{has_Any}++;
                 $i++;
             }
             push @$atoms, $atom;
         }
-        else{
+        else {
             my $atom={type=>"char", char=>$c};
             push @$atoms, $atom;
         }
     }
-    if(@paren_stack){
+    if (@paren_stack) {
         die "REGEX $re: Unmatched parenthesis\n";
     }
     {
         my $type="seq";
         my $n=@$atoms;
-        if($n==0){
+        if ($n==0) {
             warn "regex_parse: empty final\n";
             push @$alts, undef;
         }
-        else{
-            if($flag_combine_chars){
+        else {
+            if ($flag_combine_chars) {
                 my @tlist;
                 my $last;
                 push @$atoms, {type=>"end"};
-                foreach my $t (@$atoms){
-                    if(!$last){
+                foreach my $t (@$atoms) {
+                    if (!$last) {
                         $last=$t;
                     }
-                    elsif($t->{type} ne "char" or $last->{type} ne "char"){
+                    elsif ($t->{type} ne "char" or $last->{type} ne "char") {
                         push @tlist, $last;
                         $last=$t;
                     }
-                    else{
+                    else {
                         $last->{char}.=$t->{char};
                     }
                 }
                 $atoms=\@tlist;
                 $n=@$atoms;
             }
-            if($type ne "seq"){
+            if ($type ne "seq") {
                 push @$alts, {type=>$type, n=>$n, list=>$atoms};
                 $atoms=[];
             }
-            else{
+            else {
                 my $atom;
-                if($n==1){
+                if ($n==1) {
                     $atom=pop @$atoms;
                 }
-                else{
+                else {
                     $atom={type=>"seq", n=>$n, list=>$atoms};
                     $atoms=[];
                 }
@@ -839,14 +839,14 @@ sub parse_regex {
     }
     my $atom;
     my $n=@$alts;
-    if($n==1){
+    if ($n==1) {
         $atom=pop @$alts;
     }
-    elsif($n>1){
+    elsif ($n>1) {
         $atom={type=>"alt", n=>$n, list=>$alts};
         $alts=[];
     }
-    while (my ($k, $v) = each %stat){
+    while (my ($k, $v) = each %stat) {
         $atom->{$k}=$v;
     }
     return $atom;
@@ -854,33 +854,33 @@ sub parse_regex {
 
 sub debug_regex {
     my ($r, $level) = @_;
-    if(!$level){
+    if (!$level) {
         $level=0;
     }
     print '  ' x $level;
 
-    if($r->{type} eq "class"){
-        if($r->{list}){
+    if ($r->{type} eq "class") {
+        if ($r->{list}) {
             print "[ ", join(" ", @{$r->{list}}), " ]\n";
         }
-        else{
+        else {
             print "\\ $r->{char}\n";
         }
     }
-    elsif($r->{type} eq "char"){
+    elsif ($r->{type} eq "char") {
         print "$r->{char}\n";
     }
-    elsif($r->{type} eq "AnyChar"){
+    elsif ($r->{type} eq "AnyChar") {
         print ".\n";
     }
-    else{
+    else {
         print "$r->{type}\n";
-        if($r->{list}){
-            foreach my $t (@{$r->{list}}){
+        if ($r->{list}) {
+            foreach my $t (@{$r->{list}}) {
                 debug_regex($t, $level+1);
             }
         }
-        elsif($r->{atom}){
+        elsif ($r->{atom}) {
             debug_regex($r->{atom}, $level+1);
         }
     }

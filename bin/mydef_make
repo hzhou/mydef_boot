@@ -19,54 +19,53 @@ our %macros;
 
 my $script=$0;
 my $nosub=0;
-if(@ARGV and $ARGV[0] eq 'nosub'){
+if (@ARGV and $ARGV[0] eq 'nosub') {
     shift @ARGV;
     $nosub=1;
 }
-
-foreach my $a (@ARGV){
-    if($a eq "-f"){
+foreach my $a (@ARGV) {
+    if ($a eq "-f") {
         $flag_force = 1;
     }
-    elsif($a eq "-v" or $a eq "--version"){
+    elsif ($a eq "-v" or $a eq "--version") {
         my $prog=$0;
         $prog=~s/^.*\///;
         print "$prog: version development - latest\"\n";
         exit(0);
     }
 }
-if(@ARGV and -d $ARGV[0]){
+if (@ARGV and -d $ARGV[0]) {
     my $d=$ARGV[0];
     open In, "config";
     @master_config=<In>;
     close In;
     chdir $d or die "can't chdir $d\n";
 }
-if(!-f "config"){
+if (!-f "config") {
     open Out, ">config" or die "Can't write config: $!\n";
-    if(@master_config){
-        foreach my $l (@master_config){
-            if($l=~/^include_path:\s*(\S+)/){
+    if (@master_config) {
+        foreach my $l (@master_config) {
+            if ($l=~/^include_path:\s*(\S+)/) {
                 my @t=split /:/, $1;
                 my @tt;
                 push @tt, "..";
-                foreach my $s (@t){
-                    if($s!~/^\// or -d $s){
+                foreach my $s (@t) {
+                    if ($s!~/^\// or -d $s) {
                         push @tt, "../$s";
                     }
-                    else{
+                    else {
                         push @tt, $s;
                     }
                 }
                 my $path=join(":", @tt);
                 print Out "include_path: $path\n";
             }
-            else{
+            else {
                 print Out $l;
             }
         }
     }
-    else{
+    else {
         $config_outputdir=prompt("Please enter the path to compile into [out]: ");
         print Out "output_dir: $config_outputdir\n";
         $module=prompt("Please enter module type [perl]: ");
@@ -77,26 +76,26 @@ if(!-f "config"){
 }
 open In, "config" or die "Can't open config: $!\n";
 while(<In>){
-    if(/module:\s+(\w+)/){
+    if (/module:\s+(\w+)/) {
         $module=$1;
     }
-    elsif(/output_(dir|path): (\S+)/){
+    elsif (/output_(dir|path): (\S+)/) {
         $config_outputdir=$2;
     }
-    elsif(/filetype:\s*(\S+)/){
+    elsif (/filetype:\s*(\S+)/) {
         $config_filetype=$1;
     }
-    elsif(/^include_path:\s*(\S+)/){
+    elsif (/^include_path:\s*(\S+)/) {
         add_path($1);
     }
-    elsif(/^include:\s*(\S+)/){
+    elsif (/^include:\s*(\S+)/) {
         my $t=$1;
         @include_default=split /[:,]\s*/, $t;
     }
-    elsif(/^make-(\w+):\s*(.*\S)/){
+    elsif (/^make-(\w+):\s*(.*\S)/) {
         $make_targets{$1}=$2;
     }
-    elsif(/^macro_(\w+):\s*(.*\S)/){
+    elsif (/^macro_(\w+):\s*(.*\S)/) {
         $macros{$1}=$2;
     }
 }
@@ -104,31 +103,31 @@ close In;
 add_path($ENV{MYDEFLIB});
 print "    output_dir: $config_outputdir\n";
 
-if(-f "copylist"){
+if (-f "copylist") {
     my $location;
     open In, "copylist" or die "Can't open copylist: $!\n";
     while(<In>){
         my $l=$_;
-        if(/^(\S+):\s*(.*)/){
+        if (/^(\S+):\s*(.*)/) {
             $location=$1;
             $l=$2;
             my $t="$config_outputdir/$location";
-            if(!-d $t){
+            if (!-d $t) {
                 mkdir $t;
             }
         }
-        if($l){
+        if ($l) {
             my @tlist=split /\s+/, $l;
-            foreach my $t (@tlist){
+            foreach my $t (@tlist) {
                 $t=~s/^\s+//;
                 $t=~s/\s+$//;
-                if($t=~/\*/){
+                if ($t=~/\*/) {
                     my @all=glob($t);
-                    foreach my $a (@all){
+                    foreach my $a (@all) {
                         $h_copylist{$a}=$location;
                     }
                 }
-                elsif(-f $t){
+                elsif (-f $t) {
                     $h_copylist{$t}=$location;
                 }
             }
@@ -140,29 +139,29 @@ if(-f "copylist"){
 }
 my @files;
 my @allfiles=glob("*");
-foreach my $f (@allfiles){
-    if($f=~/.def$/){
+foreach my $f (@allfiles) {
+    if ($f=~/.def$/) {
         push @files, $f;
     }
-    elsif(-d $f){
-        if(-e "$f/skipmake"){
+    elsif (-d $f) {
+        if (-e "$f/skipmake") {
             print "    Skip folder $f\n";
         }
-        elsif($f =~ /^(cmp|bootstrap|old|tests|macros|deflib|dist|macros_.*)$/){
+        elsif ($f =~ /^(cmp|bootstrap|old|tests|macros|deflib|dist|macros_.*)$/) {
             print "    Skip folder $f\n";
         }
-        elsif($f eq $config_outputdir and -f "$f/Makefile"){
+        elsif ($f eq $config_outputdir and -f "$f/Makefile") {
             $config_outputdir_make = 1;
             unshift @make_folders, $f;
         }
-        else{
+        else {
             my @t=glob("$f/*.def");
-            if(@t){
+            if (@t) {
                 print "$script $f ... \n";
                 system("$script $f")==0 or die "Failed to spawn sub make: $?\n";
             }
 
-            if(-f "$f/Makefile"){
+            if (-f "$f/Makefile") {
                 push @make_folders, $f;
             }
         }
@@ -177,80 +176,80 @@ while(my $f=pop @files){
     my @page_list;
     my $page;
     my $output_dir;
-    if(!$h_def{$f} or $h_def{$f} == 1){
+    if (!$h_def{$f} or $h_def{$f} == 1) {
         my $deplist=[];
         $h_def{$f}=$deplist;
         my $got_page=0;
         my $inpage=0;
         open In, "$f" or die "Can't open $f: $!\n";
         while(<In>){
-            if($inpage){
-                if(/^\S/){
+            if ($inpage) {
+                if (/^\S/) {
                     $inpage=0;
                 }
-                elsif($inpage==1 and /^(\s*)(\w+):/){
-                    if(/^\s*output_dir: (\S+)/){
+                elsif ($inpage==1 and /^(\s*)(\w+):/) {
+                    if (/^\s*output_dir: (\S+)/) {
                         my $dir=expand_macros($1);
 
-                        if($dir !~/^[\/\.]/ and $output_dir){
+                        if ($dir !~/^[\/\.]/ and $output_dir) {
                             $dir=$output_dir."/".$dir;
                         }
                         $page->{output_dir}=$dir;
                         my $key = "$f-$page->{page}";
                         my $tlist=$folder{$dir};
-                        if($tlist){
+                        if ($tlist) {
                             push @$tlist, $key;
                         }
-                        else{
+                        else {
                             $folder{$dir}=[$key];
                         }
                         $page->{in_var}=$dir;
                     }
-                    elsif(/^\s*\$include\s+(\S*)/ and $module ne "c" and -f $1){
+                    elsif (/^\s*\$include\s+(\S*)/ and $module ne "c" and -f $1) {
                         $page->{include}->{$1}=1;
                     }
-                    elsif(/^\s*(type|module):\s*(\w+)/){
-                        if(!$page->{$1}){
+                    elsif (/^\s*(type|module):\s*(\w+)/) {
+                        if (!$page->{$1}) {
                             $page->{$1}=$2;
                         }
                     }
-                    elsif(/^\s*type:\s*$/){
+                    elsif (/^\s*type:\s*$/) {
                         $page->{type}="none";
                     }
-                    elsif(/^\s*package:/){
-                        if($module eq "perl"){
+                    elsif (/^\s*package:/) {
+                        if ($module eq "perl") {
                             $page->{type}="pm";
                         }
                     }
-                    elsif(/^\s*(make_dep|make_cmd|other|CC|CFLAGS|LIB):\s+(.*)/){
+                    elsif (/^\s*(make_dep|make_cmd|other|CC|CFLAGS|LIB):\s+(.*)/) {
                         $page->{$1}=$2;
                     }
                 }
-                else{
+                else {
                     $inpage=2;
                 }
             }
-            if(!$inpage){
-                if(/^include:?\s*(\S+\.def)/){
+            if (!$inpage) {
+                if (/^include:?\s*(\S+\.def)/) {
                     my $f=find_file($1);
-                    if($f){
+                    if ($f) {
                         push @$deplist, $f;
-                        if(!$h_def{$f}){
+                        if (!$h_def{$f}) {
                             push @files, $f;
                                 $h_def{$f}=1;
                         }
                     }
                 }
-                elsif(/^page: .*\$\d.*/){
+                elsif (/^page: .*\$\d.*/) {
                     $inpage=1;
                     $page={};
                     push @page_list, $page;
                 }
-                elsif(/^page: ([\w\.-]+)/){
-                    if($1 eq "test"){
+                elsif (/^page: ([\w\.-]+)/) {
+                    if ($1 eq "test") {
                         print "skipping page: test\n";
                     }
-                    else{
+                    else {
                         $inpage=1;
                         $got_page=1;
                         $page={};
@@ -265,19 +264,19 @@ while(my $f=pop @files){
                         $h_page{$key}=$page;
                     }
                 }
-                elsif(/^output_dir: (\S+)/){
+                elsif (/^output_dir: (\S+)/) {
                     $output_dir=$1;
                 }
             }
         }
         close In;
-        if($got_page){
-            if(@include_default){
-                foreach my $i (@include_default){
+        if ($got_page) {
+            if (@include_default) {
+                foreach my $i (@include_default) {
                     my $f=find_file($i);
-                    if($f){
+                    if ($f) {
                         push @$deplist, $f;
-                        if(!$h_def{$f}){
+                        if (!$h_def{$f}) {
                             push @files, $f;
                                 $h_def{$f}=1;
                         }
@@ -286,9 +285,9 @@ while(my $f=pop @files){
             }
         }
 
-        if($output_dir){
-            foreach my $page (@page_list){
-                if(!$page->{output_dir}){
+        if ($output_dir) {
+            foreach my $page (@page_list) {
+                if (!$page->{output_dir}) {
                     $page->{output_dir}=$output_dir;
                 }
             }
@@ -296,58 +295,58 @@ while(my $f=pop @files){
     }
 }
 while(my ($p, $h) = each %h_page){
-    if($h->{page}=~/\.\w+$/){
+    if ($h->{page}=~/\.\w+$/) {
         $h->{type}="none";
     }
-    if(!$h->{type}){
-        if($config_filetype){
+    if (!$h->{type}) {
+        if ($config_filetype) {
             $h->{type}=$config_filetype;
         }
-        else{
+        else {
             my $t_module=$module;
-            if($h->{module}){
+            if ($h->{module}) {
                 $t_module=$h->{module};
             }
-            if($module_type{$t_module}){
+            if ($module_type{$t_module}) {
                 $h->{type}=$module_type{$t_module};
             }
-            else{
+            else {
                 $h->{type}=$t_module;
             }
         }
     }
-    if(!$h->{in_var}){
+    if (!$h->{in_var}) {
         $h->{in_var}="toproot";
-        if($folder{toproot}){
+        if ($folder{toproot}) {
             my $tlist=$folder{toproot};
             push @$tlist, $p;
         }
-        else{
+        else {
             $folder{toproot}=[$p];
         }
     }
     $h->{path}=$h->{page};
-    if($h->{output_dir}){
+    if ($h->{output_dir}) {
         $h->{path}=$h->{output_dir}."/".$h->{path};
     }
-    if($config_outputdir and $h->{path}!~/^[\/\.]/){
+    if ($config_outputdir and $h->{path}!~/^[\/\.]/) {
         $h->{path}=$config_outputdir."/".$h->{path};
     }
-    if($h->{type} and $h->{type} ne "none"){
+    if ($h->{type} and $h->{type} ne "none") {
         $h->{path}.=".$h->{type}";
     }
 }
 while(my ($f, $l) = each %h_def){
     my %track;
-    foreach my $t (@$l){
+    foreach my $t (@$l) {
         $track{$t}=1;
     }
     my $j=0;
     while($j<@$l){
         my $t=$l->[$j];
         my $ll=$h_def{$t};
-        foreach my $tt (@$ll){
-            if(!$track{$tt}){
+        foreach my $tt (@$ll) {
+            if (!$track{$tt}) {
                 $track{$tt}=1;
                 push @$l, $tt;
             }
@@ -356,10 +355,10 @@ while(my ($f, $l) = each %h_def){
     }
 }
 open Out, ">Makefile" or die "Can't write Makefile: $!\n";
-if($0=~/(bootstrap\/script)\/mydef_make/){
+if ($0=~/(bootstrap\/script)\/mydef_make/) {
     print Out "MakePage=perl $1/mydef_page\n";
 }
-else{
+else {
     print Out "MakePage=mydef_page\n";
 }
 print Out "\n";
@@ -368,16 +367,16 @@ my %var_hash;
 my @tlist;
 while(my ($f, $l) = each %folder){
     my $name;
-    if($f=~/.*\/(.*)/){
+    if ($f=~/.*\/(.*)/) {
         $name=uc($1);
     }
-    else{
+    else {
         $name=uc($f);
     }
-    if(!$name){
+    if (!$name) {
         $name="ROOT";
     }
-    if($var_hash{$name}){
+    if ($var_hash{$name}) {
         my $j=2;
         while($var_hash{"$name$j"}){$j++;};
         $name="$name$j";
@@ -385,20 +384,20 @@ while(my ($f, $l) = each %folder){
     $var_hash{$name}=1;
     push @tlist, "\${$name}";
     print Out "$name=";
-    foreach my $p (@$l){
+    foreach my $p (@$l) {
         print Out $h_page{$p}->{path}, " ";
     }
     print Out "\n";
 }
-if(%h_copylist){
+if (%h_copylist) {
     print Out "COPY=";
     while(my ($f, $l) = each %h_copylist){
         my $sep="/";
         if($l){$sep="/$l/"};
-        if($f=~/(.+)\/(.+)/){
+        if ($f=~/(.+)\/(.+)/) {
             print Out $config_outputdir, $sep, $2, " ";
         }
-        else{
+        else {
             print Out $config_outputdir, $sep, $f, " ";
         }
     }
@@ -409,7 +408,7 @@ print Out "\n";
 
 print Out "all_targets: ", join(" ", @tlist), "\n\n";
 
-if(@make_folders){
+if (@make_folders) {
     print Out "all: all_targets ", join(' ', @make_folders), "\n\n";
 }
 
@@ -434,36 +433,36 @@ while(my ($p, $h)=each %h_page){
     my $inc=$h->{include};
     my $inc_dep=join(" ", keys %$inc);
     my $extra_dep='';
-    if($h->{make_dep}){
+    if ($h->{make_dep}) {
         $extra_dep=$h->{make_dep};
     }
-    if($h->{path}){
+    if ($h->{path}) {
         my @t;
         my $l=$h_def{$def};
-        foreach my $tt (@$l){
-            if(!$inc->{$tt} and -f $tt){
+        foreach my $tt (@$l) {
+            if (!$inc->{$tt} and -f $tt) {
                 push @t, $tt;
                 $inc->{$tt}=1;
             }
         }
         print Out $h->{path}, ": ", $def, " ", join(" ", @t), " $inc_dep $extra_dep\n";
-        if($h->{make_cmd}){
+        if ($h->{make_cmd}) {
             print Out "\t$h->{make_cmd}\n";
         }
-        elsif($h->{module} and ($h->{module} ne $module)){
+        elsif ($h->{module} and ($h->{module} ne $module)) {
             print Out "\t\${MakePage} -m$h->{module} $def $h->{path}\n";
         }
-        else{
+        else {
             print Out "\t\${MakePage} $def $h->{path}\n";
         }
         print Out "\n";
     }
 }
-if(-f "install_def.sh"){
+if (-f "install_def.sh") {
     print Out "install:\n";
     open In, "install_def.sh" or die "Can't open install_def.sh: $!\n";
     while(<In>){
-        if(/^(mydef_install.*)/){
+        if (/^(mydef_install.*)/) {
             print Out "\t\@$1\n";
         }
     }
@@ -471,17 +470,17 @@ if(-f "install_def.sh"){
     print Out "\n";
 }
 
-elsif($make_folders[0] eq $config_outputdir){
+elsif ($make_folders[0] eq $config_outputdir) {
     print Out "install: $config_outputdir\n";
     print Out "\tmake -C $config_outputdir install\n";
     print Out "\n";
 }
-if(-f "tests/TESTS"){
+if (-f "tests/TESTS") {
     print Out "test:\n\tcd tests; mydef_test\n\n";
 }
-if(@make_folders){
-    foreach my $f (@make_folders){
-        if(!$nosub){
+if (@make_folders) {
+    foreach my $f (@make_folders) {
+        if (!$nosub) {
             print Out "$f: force_look\n";
             print Out "\tmake -C $f\n";
             print Out "\n";
@@ -490,26 +489,26 @@ if(@make_folders){
 
     print Out "force_look:\n\ttrue\n";
 }
-while (my ($k, $v) = each %make_targets){
+while (my ($k, $v) = each %make_targets) {
     print Out "$k:\n";
     print Out "\t$v\n";
     print Out "\n";
 }
 close Out;
 while(my ($dir, $list) = each %folder){
-    if($dir=~/toproot|ROOT/){
+    if ($dir=~/toproot|ROOT/) {
         $dir = $config_outputdir;
     }
-    elsif($dir!~/^\/|\.\.?\//){
+    elsif ($dir!~/^\/|\.\.?\//) {
         $dir = "$config_outputdir/$dir";
     }
 
-    if($dir and !-e "$dir/skipmake"){
-        if($module eq "c" || $module eq "win32"){
-            if(!-d $dir){
+    if ($dir and !-e "$dir/skipmake") {
+        if ($module eq "c" || $module eq "win32") {
+            if (!-d $dir) {
                 mkdir $dir;
             }
-            if($flag_force || !-f "$dir/Makefile"){
+            if ($flag_force || !-f "$dir/Makefile") {
                 print "Create $dir/Makefile\n";
                 my $t_module;
                 my $CC;
@@ -518,101 +517,101 @@ while(my ($dir, $list) = each %folder){
                 my $RC;
 
                 my @target_list;
-                if($list){
-                    foreach my $t (@$list){
+                if ($list) {
+                    foreach my $t (@$list) {
                         my $t_page = $h_page{$t};
-                        if($t_page->{make} or $t_page->{other}){
+                        if ($t_page->{make} or $t_page->{other}) {
                             my $page=$h_page{$t};
                             my $name=$page->{path};
-                            if($page->{path}=~/.*\/(.*)\.(\w+)/){
+                            if ($page->{path}=~/.*\/(.*)\.(\w+)/) {
                                 $name = $1;
                             }
                             push @target_list, [$page, $name];
 
-                            if(!$t_module and $page->{module}){
+                            if (!$t_module and $page->{module}) {
                                 $t_module = $page->{module};
                             }
 
-                            if($page->{CC}){
+                            if ($page->{CC}) {
                                 $CC = $page->{CC};
                             }
-                            if($page->{CFLAGS}){
+                            if ($page->{CFLAGS}) {
                                 $CFLAGS = $page->{CFLAGS};
                             }
-                            if($page->{LIB}){
+                            if ($page->{LIB}) {
                                 $LIB = $page->{LIB};
                             }
 
-                            if($page->{make}=~/win32/){
+                            if ($page->{make}=~/win32/) {
                                 $CC = "x86_64-w64-mingw32-gcc";
                             }
                         }
                     }
                 }
-                if(!@target_list){
+                if (!@target_list) {
                     my $page=$h_page{$list->[0]};
                     my $name=$page->{path};
-                    if($page->{path}=~/.*\/(.*)\.(\w+)/){
+                    if ($page->{path}=~/.*\/(.*)\.(\w+)/) {
                         $name = $1;
                     }
                     push @target_list, [$page, $name];
 
-                    if(!$t_module and $page->{module}){
+                    if (!$t_module and $page->{module}) {
                         $t_module = $page->{module};
                     }
 
-                    if($page->{CC}){
+                    if ($page->{CC}) {
                         $CC = $page->{CC};
                     }
-                    if($page->{CFLAGS}){
+                    if ($page->{CFLAGS}) {
                         $CFLAGS = $page->{CFLAGS};
                     }
-                    if($page->{LIB}){
+                    if ($page->{LIB}) {
                         $LIB = $page->{LIB};
                     }
 
-                    if($page->{make}=~/win32/){
+                    if ($page->{make}=~/win32/) {
                         $CC = "x86_64-w64-mingw32-gcc";
                     }
                 }
-                if(!$t_module){
+                if (!$t_module) {
                     $t_module = $module;
                 }
                 print "    module: $t_module\n";
-                if(@target_list){
+                if (@target_list) {
                     open Out, ">$dir/Makefile" or die "Can't write $dir/Makefile: $!\n";
-                    if(!$CC){
-                        if($t_module eq "win32"){
+                    if (!$CC) {
+                        if ($t_module eq "win32") {
                             $CC = "x86_64-w64-mingw32-gcc";
                             $RC = "x86_64-w64-mingw32-windres";
                             $LIB = "-Wl,-subsystem,windows";
                         }
-                        else{
+                        else {
                             $CC = "gcc";
                         }
                     }
                     print Out "CC=$CC\n";
                     print Out "CFLAGS=$CFLAGS\n";
                     print Out "LIB=$LIB\n";
-                    if($RC){
+                    if ($RC) {
                         print Out "RC=$RC\n";
                     }
                     print Out "\n";
-                    foreach my $t (@target_list){
+                    foreach my $t (@target_list) {
                         my ($page, $name)=@$t;
                         my @objs = ("$name.o");
-                        if($page->{other}){
+                        if ($page->{other}) {
                             my @tlist = split /,\s*/, $page->{other};
-                            foreach my $p (@tlist){
+                            foreach my $p (@tlist) {
                                 push @objs, "$p.o";
                             }
                         }
                         my $obj_list = join(' ', @objs);
                         my $lib_list;
-                        if(-f "$dir/$name.c"){
+                        if (-f "$dir/$name.c") {
                             open In, "$dir/$name.c" or die "Can't open $dir/$name.c: $!\n";
                             while(<In>){
-                                if(/^\/\*\s*link:\s*(.*?)\s*\*\/$/){
+                                if (/^\/\*\s*link:\s*(.*?)\s*\*\/$/) {
                                     $lib_list = $1;
                                     last;
                                 }
@@ -620,7 +619,7 @@ while(my ($dir, $list) = each %folder){
                             close In;
                         }
                         my $target = $name;
-                        if($t_module eq "win32" or $page->{make}=~/win32/){
+                        if ($t_module eq "win32" or $page->{make}=~/win32/) {
                             $target = "$name.exe";
                         }
 
@@ -632,7 +631,7 @@ while(my ($dir, $list) = each %folder){
                     print Out "\t\$(CC) -c \$(CFLAGS) -o \$@ \$<\n";
                     print Out "\n";
 
-                    if($RC){
+                    if ($RC) {
                         print Out "%.o: %.rc\n";
                         print Out "\t\$(RC) \$< \$@ \n";
                         print Out "\n";
@@ -644,27 +643,26 @@ while(my ($dir, $list) = each %folder){
         }
     }
 }
-if($config_outputdir){
-    if(!-d $config_outputdir){
+if ($config_outputdir) {
+    if (!-d $config_outputdir) {
         print "Create output folder $config_outputdir ...\n";
         mkdir $config_outputdir;
     }
 }
-else{
+else {
     $config_outputdir=".";
 }
 
-foreach my $f (keys(%folder)){
-    if($f=~/toproot|ROOT/){
+foreach my $f (keys(%folder)) {
+    if ($f=~/toproot|ROOT/) {
         next;
     }
-    if($f !~/^[\/\.]/){
+    if ($f !~/^[\/\.]/) {
         $f=$config_outputdir."/".$f;
     }
-    if(!-d $f){
+    if (!-d $f) {
         print "Create output folder $f ...\n";
         system "mkdir -p $f";
-
     }
 }
 
@@ -675,13 +673,13 @@ sub prompt {
         print "$msg\n";
         my $t=<STDIN>;
         chomp $t;
-        if($t){
+        if ($t) {
             return $t;
         }
-        elsif($msg=~/\[(.*)\]: $/){
+        elsif ($msg=~/\[(.*)\]: $/) {
             return $1;
         }
-        else{
+        else {
             die "Must reply $msg\n";
         }
     }
@@ -689,29 +687,29 @@ sub prompt {
 
 sub add_path {
     my ($dir) = @_;
-    if(!$dir){
+    if (!$dir) {
         return;
     }
 
     my $deflib=$ENV{MYDEFLIB};
     my $defsrc=$ENV{MYDEFSRC};
 
-    if($dir=~/\$\(MYDEFSRC\)/){
-        if(!$defsrc){
+    if ($dir=~/\$\(MYDEFSRC\)/) {
+        if (!$defsrc) {
             die "MYDEFSRC not defined (in environment)!\n";
         }
         $dir=~s/\$\(MYDEFSRC\)/$defsrc/g;
     }
 
     my @tlist = split /:/, $dir;
-    foreach my $t (@tlist){
+    foreach my $t (@tlist) {
         $t=~s/\/$//;
-        if($t and !$path{$t}){
-            if(-d $t){
+        if ($t and !$path{$t}) {
+            if (-d $t) {
                 $path{$t}=1;
                 push @path, $t;
             }
-            else{
+            else {
                 warn "add_path: [$t] not a directory\n";
             }
         }
@@ -720,11 +718,11 @@ sub add_path {
 
 sub expand_macros {
     my ($t) = @_;
-    if($t=~/\$\((\w+)\)/){
-        if($macros{$1}){
+    if ($t=~/\$\((\w+)\)/) {
+        if ($macros{$1}) {
             $t=$`.$macros{$1}.$';
         }
-        else{
+        else {
             die "Unknown Macro in $t\n";
         }
     }
@@ -734,23 +732,23 @@ sub expand_macros {
 sub find_file {
     my ($file) = @_;
     my $nowarn;
-    if($file=~/^(\S+)\?/){
+    if ($file=~/^(\S+)\?/) {
         $file=$1;
         $nowarn = 1;
     }
 
-    if(-f $file){
+    if (-f $file) {
         return $file;
     }
 
-    if(@path){
-        foreach my $dir (@path){
-            if(-f "$dir/$file"){
+    if (@path) {
+        foreach my $dir (@path) {
+            if (-f "$dir/$file") {
                 return "$dir/$file";
             }
         }
     }
-    if(!$nowarn){
+    if (!$nowarn) {
         warn "$file not found\n";
         warn "  search path: ".join(":", @path)."\n";
     }
